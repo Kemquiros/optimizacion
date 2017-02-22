@@ -10,7 +10,7 @@ import random
 class NewtonRaphson:
 
 	portada="""
- _       _______        ________________ _             _______ _______ _______         _______ _______ _       
+ _       _______        ________________ _             _______ _______ _______         _______ _______ _
 ( (    /(  ____ \       \__   __(  ___  | (    /|     (  ____ |  ___  |  ____ )\     /(  ____ (  ___  | (    /|
 |  \  ( | (    \/ )   ( |  ) (  | (   ) |  \  ( |     | (    )| (   ) | (    )| )   ( | (    \/ (   ) |  \  ( |
 |   \ | | (__   | | _ | |  | |  | |   | |   \ | |_____| (____)| (___) | (____)| (___) | (_____| |   | |   \ | |
@@ -20,10 +20,10 @@ class NewtonRaphson:
 |/    )_|_______(_______)  )_(  (_______)/    )_)     |/   \__//     \|/      ||    | \_______|_______)/    )_)
 
              Desarrollado por: John Tapias Zarrazola
-                                                                                                              
+
 """
 	def __init__(self):
-		self.nombre="newton-raphson"	
+		self.nombre="newton-raphson"
 	def imprimirPortada(self):
 		print(self.portada)
 	def calcular(self,pol,deriv1,deriv2,error,iteraciones,A,B):
@@ -40,7 +40,7 @@ class NewtonRaphson:
 		y=[]
 		for i in range(0,200):
     			y.append(pol.evalPol(A+(dt * i)))
-			
+
 		#Derivada primera del polinomio
 		y1=[]
 		for i in range(0,200):
@@ -51,17 +51,17 @@ class NewtonRaphson:
 		for i in range(0,200):
     			y2.append(deriv2.evalPol(A+(dt * i)))
 
+
 		#Thread no bloqueante de Pyplot
 		plt.ion()
-		
 
+		x0 = random.uniform(A,B)
 		while not termina:
 			temp=[]
 			errorTemp=0
 			itera=itera+1
 			temp.append(['Iteracion',itera])
-			#Escogemos un X0 al azar perteneciente al intervalo [A;B]
-			x0 = mit=random.uniform(A,B)
+			#Escogemos un X0 al azar perteneciente al intervalo [A;B]			
 			f0 = deriv1.evalPol(x0)#Se evalúa x0 en la primera derivada
 			ff0 = deriv2.evalPol(x0)#Se evalúa x0 en la segunda derivada
 			x1 = x0 - (f0/ff0)
@@ -82,7 +82,7 @@ class NewtonRaphson:
 
 			#Graficamos
 			plt.figure(1)
-			
+
 			#Cálculo de puntos
 			Y0p = pol.evalPol(x0)
 			Y1p = pol.evalPol(x1)
@@ -92,7 +92,7 @@ class NewtonRaphson:
 
 			Y0d2 = deriv2.evalPol(x0)
 			Y1d2 = deriv2.evalPol(x1)
-			
+
 			#Subplot polinomio
 			plt.subplot(221)
 			plt.title('Funcion')
@@ -102,8 +102,8 @@ class NewtonRaphson:
     			plt.plot(x0, Y0p,'rs')
     			plt.plot((x0, x0), ((-2)*Y0p, 2*Y0p), 'r-')
     			plt.plot(x1, Y1p,'g^')
-    			plt.plot((x1, x1), ((-2)*Y1p, 2*Y1p), 'g-')	
-			plt.grid(True)		
+    			plt.plot((x1, x1), ((-2)*Y1p, 2*Y1p), 'g-')
+			plt.grid(True)
 			#Subplot primera derivada
 			plt.subplot(223)
 			plt.title('Primera Derivada')
@@ -114,7 +114,7 @@ class NewtonRaphson:
     			plt.plot((x0, x0), ((-2)*Y0d1, 2*Y0d1), 'r-')
     			plt.plot(x1, Y1d1,'g^')
     			plt.plot((x1, x1), ((-2)*Y1d1, 2*Y1d1), 'g-')
-			plt.grid(True)	
+			plt.grid(True)
 			#Subplot segunda derivada
 			plt.subplot(224)
 			plt.title('Segunda Derivada')
@@ -125,7 +125,7 @@ class NewtonRaphson:
     			plt.plot((x0, x0), ((-2)*Y0d2, 2*Y0d2), 'r-')
     			plt.plot(x1, Y1d2,'g^')
     			plt.plot((x1, x1), ((-2)*Y1d2, 2*Y1d2), 'g-')
-			plt.grid(True)			
+			plt.grid(True)
 
 			plt.show()
 			plt.pause((20/iteraciones))
@@ -135,7 +135,7 @@ class NewtonRaphson:
 			if not termina:
 				x0=x1
 				plt.clf()
-		
+
 		print('\n----------------------------------------------------')
 		print('-------------------HISTÓRICO------------------------')
 		print('----------------------------------------------------')
@@ -149,8 +149,8 @@ class NewtonRaphson:
 			cadena = cadena + "\t| " + str(elemento[3][1])
 			cadena = cadena + "\t| " + str(elemento[4][1])
 			cadena = cadena + "\t| " + str(elemento[5][1])
-			cadena = cadena + "\t| " + str(elemento[6][1])	
-			print(cadena)	
+			cadena = cadena + "\t| " + str(elemento[6][1])
+			print(cadena)
 		#Obtener el último X1
 		ultimo = resul[len(resul)-1]
 		respuesta = ultimo[2][1]
@@ -159,9 +159,3 @@ class NewtonRaphson:
 		print('----------------------------------------------------')
 		print("Cero real aproximado: "+str(respuesta))
 		print('----------------------------------------------------')
-		
-			
-			
-		
-
-
