@@ -12,6 +12,8 @@
 # coding: utf-8
 from math import *
 import random
+import sys
+import matplotlib.pyplot as plt
 from __future__ import division
 
 
@@ -35,6 +37,21 @@ def generarNuevoCandidato(semilla,movimiento):
 
 # In[3]:
 
+def crearMovimiento(N):
+    #El movimiento consta de dos partes    
+    movimiento=[]
+
+    while len(movimiento) < 2:
+        #Las posiciones del vector van de 0 a N-1
+        temp=random.randint(0,N-1)
+        if temp not in movimiento:
+            movimiento.append(temp)
+    movimiento=list(sorted(movimiento))  
+    return movimiento
+
+
+# In[4]:
+
 def generarCandidatos(semilla,lista,posibles,memoria,N):
     print "---------------------------"
     print "Comienza la generación de nuevos candidatos,"
@@ -43,15 +60,10 @@ def generarCandidatos(semilla,lista,posibles,memoria,N):
     print "---------------------------"
     candidatos=[]
     while len(candidatos)<posibles:
+        
         #Crea un nuevo movimiento
-        movimiento=[]
-        #El movimiento consta de dos partes
-        while len(movimiento) < 2:
-            #Las posiciones del vector van de 0 a N-1
-            temp=random.randint(0,N-1)
-            if temp not in movimiento:
-                movimiento.append(temp)
-        movimiento=list(sorted(movimiento))
+        movimiento=crearMovimiento(N)
+
         
         if movimiento not in lista:
             print "Permutación ",movimiento," : Ha sido aceptada"
@@ -75,7 +87,7 @@ def generarCandidatos(semilla,lista,posibles,memoria,N):
             
 
 
-# In[4]:
+# In[5]:
 
 def evaluar(v):
     #Parejas penalizadas
@@ -96,13 +108,13 @@ def evaluar(v):
     
 
 
-# In[5]:
+# In[6]:
 
 def combinatoria(N):
     return (N*(N-1))/2
 
 
-# In[6]:
+# In[7]:
 
 def producirSemilla(N):
     semilla=[]
@@ -122,7 +134,7 @@ def producirSemilla(N):
     return semilla
 
 
-# In[7]:
+# In[8]:
 
 def busquedaTabu(N,I):
     #Es una combinatoria de N tomados de a 2
@@ -207,28 +219,181 @@ def busquedaTabu(N,I):
             print "---------------------------"
             
             i=i+1
+    print "Total iteraciones = ",i
+    print "---------------------------\n"
         
     
 
 
-# In[8]:
+# In[9]:
 
 def enfriamientoSimulado(N,I):
-    print "Soy enfriamiento simulado"
+    print "\n\n---------------------------"
+    #Calculamos la temperatura inicial basados en el número reinas N
+    #Si la solución candidata empeora el fitness N/2
+    #Tiene una probabilidad del 99% de ser aceptada
+    Tini = -1*((N/2)/log(0.99))
+    print "Temperatura Inicial del sistema = ",Tini
+    #Calculamos la temperatura final basados en el número reinas N
+    #Si la solución candidata empeora el fitness N/2
+    #Tiene una probabilidad del 1% de ser aceptada 
+    Tfin = -1*((N/2)/log(0.01))
+    print "Temperatura Final del sistema = ",Tfin
+    
+    #Calculamos la tasa de enfriamiento basados en las iteraciones totales
+    #De tal forma que la última iteración tenga la temperatura final
+    deltaT=pow((Tfin/Tini),(1/I))
+    print "Delta de temperatura = ",deltaT
+    print "---------------------------\n"
+    
+    vector=producirSemilla(N)
+    
+    #Inicializo Históricos
+    histBestFitness=[]
+    histBestFitnessEnd=[]
+    histCandFitness=[]
+    histProbLim=[]
+    histProb=[]
+    histTemp=[]
+    #Comienza el algoritmo
+    T=Tini
+    probabilidadLimite=1
+    magnitud=float('nan')
+    if evaluar(vector)==0:
+        finalizar=True
+    else:        
+        finalizar= False
+    i=0
+    while i<I and not finalizar:
+        print "\n\n--------------------------------"
+        print "--------------------------------"
+        print "         Iteración #",i
+        print "--------------------------------"
+        print "--------------------------------"
+        movimiento=crearMovimiento(N)
+        candidato= generarNuevoCandidato(vector,movimiento)
+        #Se evaluan los fitness del vector y del nuevo candidato
+        fitVector = evaluar(vector)
+        fitCandidato = evaluar(candidato)
+        
+        histTemp.append(T)
+        
+        
+        print "\nFitness\tVector"
+        print "--------\t--------"
+        print fitVector,"\t",vector
+        print fitCandidato,"\t",candidato
+        print "--------\t--------"
+        
+        deltaIndividuos = fitCandidato-fitVector
+
+        
+        histProbLim.append(probabilidadLimite)
+        
+        if deltaIndividuos<=0:
+            #Si es mejor la solución encontrada
+            print "------------------"
+            print "     Reemplaza    "
+            print "------------------\n"
+            vector = list(candidato)
+            #Probabilidad no necesaria
+            probabilidad=0
+            
+        else:
+            #Enfriamiento Simulado
+            try:
+                magnitud =exp(deltaIndividuos/T)
+            except OverflowError:
+                print "------------------"
+                print "     ALERTA"
+                print "El algoritmo ha excedido la precisión de float de su computador"
+                print "Para minimizar el error en el algoritmo"
+                print "Se asume el máximo número permitido por su arquitectura"
+                print sys.float_info[0]
+                print "------------------"
+                magnitud = sys.float_info[0]
+            probabilidadLimite = 1/magnitud                                    
+            probabilidad = random.random()
+            
+            if probabilidad <= probabilidadLimite:
+                print "------------------"
+                print "     Reemplaza    "
+                print " probabilidad <= probabilidad Límite"
+                print probabilidad," <= ",probabilidadLimite
+                print "------------------\n"                              
+                vector = list(candidato)
+        histProb.append(probabilidad)
+        print "Delta indivuos: ",deltaIndividuos
+        print "Magnitud:",magnitud
+        print "Probabilidad Límite",probabilidadLimite 
+        print "Probabilidad: ",probabilidad
+        
+        #El rendimiento de la mejor solución
+        #Al finalizar la iteración
+        #Esto indica si la mejor solución se desplazó
+        fitVectorFin=evaluar(vector)
+        #Almacena el rendimiento de las soluciones
+        histBestFitness.append(fitVector)
+        histBestFitnessEnd.append(fitVectorFin)
+        histCandFitness.append(fitCandidato)
+        
+        #Verifica si es fin del algoritmo
+        if evaluar(vector)==0:
+            finalizar=True
+        else:
+            T = deltaT*T
+            print "Nueva Temperatura = ",T
+            i=i+1
+            
+    print "---------------------------"
+    if finalizar:
+        
+        print "Algortimo encontró un óptimo en ",i," iteraciones"
+        print vector
+        print "Fitness = ", evaluar(vector)
+    else:
+        print "Algortimo una buena solución en ",i," iteraciones"
+        print vector
+        print "Fitness = ", evaluar(vector)
+    print "---------------------------"
+    
+    #Graficar
+    plt.figure(1)
+    plt.plot(range(0,len(histBestFitness)), histBestFitness,'r-')
+    plt.plot(range(0,len(histBestFitnessEnd)), histBestFitnessEnd,'gs')
+    plt.plot(range(0,len(histCandFitness)), histCandFitness,'b-')    
+    plt.xlabel('Iteracion')
+    plt.ylabel('Fitness')
+    plt.figure(2)    
+    plt.subplot(211)
+    plt.plot(range(0,len(histProbLim)), histProbLim,'r-')
+    plt.plot(range(0,len(histProb)), histProb,'b-')
+    plt.xlabel('Iteracion')
+    plt.ylabel('Probabilidad')
+    plt.subplot(212)
+    plt.plot(range(0,len(histTemp)), histTemp,'gs')
+    plt.xlabel('Iteracion')
+    plt.ylabel('Temperatura del sistema')
+    plt.show()
+
+        
+            
+            
+        
 
 
-# In[ ]:
+# In[10]:
 
 def finalizar():
     print "\n\n---------------------------"
     resp=raw_input("¿Desea ejecutar algún algoritmo nuevamente?:\n(S)Sí\n(N)No:\n").strip().lower()
-    if respc=="s":
+    if resp=="s":
         return True
     
     return False
 
 
-# In[ ]:
+# In[11]:
 
 repetir=True
 #Primero se decide cuál algoritmo se desea correr
@@ -240,12 +405,12 @@ Ingrese el tipo de algoritmo:
 while repetir==True:
     algoritmo=input(texto)
     if(algoritmo==1):
-        nroReinas=input('Ingrese el número de reinas:')
+        nroReinas=input('\nIngrese el número de reinas:')
         nroIteraciones=input('Ingrese el número de iteraciones máximas:')
         busquedaTabu(nroReinas,nroIteraciones)
         repetir=finalizar()
     elif(algoritmo==2):
-        nroReinas=input('Ingrese el número de reinas:')
+        nroReinas=input('\nIngrese el número de reinas:')
         nroIteraciones=input('Ingrese el número de iteraciones máximas:')        
         enfriamientoSimulado(nroReinas,nroIteraciones)
         repetir=finalizar()
@@ -254,15 +419,4 @@ while repetir==True:
         print "Algoritmo desconocido, favor repita su selección."
         print "---------------------------\n\n"
     
-
-
-# In[ ]:
-
-ve=[3,4,2,0,5,1,6]
-print evaluar(ve)
-
-
-# In[ ]:
-
-
 
