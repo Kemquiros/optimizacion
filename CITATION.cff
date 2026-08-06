@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "numopt: classical one-dimensional numerical optimization methods"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: "Tapias Zarrazola"
+    given-names: "John Edisson"
+    orcid: "https://orcid.org/0009-0005-5166-0679"
+repository-code: "https://github.com/Kemquiros/optimizacion"
+abstract: >-
+  Tested implementations of golden-section search, bisection on the derivative,
+  Newton-Raphson, deterministic and stochastic gradient descent, and the
+  conjugate gradient method. Every routine returns the full iterate history so
+  that convergence can be inspected rather than asserted. Originally written for
+  the undergraduate course Optimizacion at Universidad de Antioquia (2017) and
+  rewritten as a library in 2026.
+keywords:
+  - optimization
+  - numerical methods
+  - golden section search
+  - conjugate gradient
+license: MIT
+version: 1.0.0
