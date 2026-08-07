@@ -16,7 +16,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
-from numopt import Polynomial, bisection, golden_section, gradient_descent, newton_raphson  # noqa: E402
+from khumbu import Polynomial, bisection, golden_section, gradient_descent, newton_raphson  # noqa: E402
 
 FIGURES = Path(__file__).resolve().parent.parent / "figures"
 INK, ACCENT, MUTED = "#1a1a1a", "#c1440e", "#8a8a8a"

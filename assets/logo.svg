@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400" width="640" height="400" role="img" aria-label="khumbu — an optimizer's descent drawn as a mountain route, with every step marked">
+  <title>khumbu</title>
+  <desc>A mountain ridge whose descending route is an optimizer's iterate trail. Each waypoint is a recorded step; the summit marker is the starting iterate and the flag at the base is the optimum reached.</desc>
+
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f7f5f1"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <linearGradient id="farRock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c9ccd1"/>
+      <stop offset="100%" stop-color="#e3e5e8"/>
+    </linearGradient>
+    <linearGradient id="nearRock" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d4650"/>
+      <stop offset="100%" stop-color="#222a33"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="640" height="400" fill="url(#sky)"/>
+
+  <!-- Distant ridge: the wider landscape of the problem -->
+  <path d="M0 300 L 96 214 L 150 250 L 214 176 L 268 226 L 330 160 L 400 232 L 470 186 L 540 244 L 640 198 L 640 320 L 0 320 Z"
+        fill="url(#farRock)"/>
+
+  <!-- The mountain the optimizer actually climbs -->
+  <path d="M0 320 L 118 320 L 250 92 L 330 168 L 392 112 L 520 320 L 640 320 Z"
+        fill="url(#nearRock)"/>
+
+  <!-- Snow on the summit face -->
+  <path d="M250 92 L 296 172 L 268 158 L 236 190 L 214 156 Z" fill="#f2f4f6" opacity="0.92"/>
+  <path d="M392 112 L 430 176 L 408 166 L 386 190 L 368 152 Z" fill="#f2f4f6" opacity="0.78"/>
+
+  <!-- THE ROUTE: an optimizer's descent, drawn as the line it walked.
+       Long strides high on the mountain, shortening as it converges. -->
+  <path d="M250 92 L 300 158 L 268 196 L 322 236 L 296 262 L 336 280 L 318 292 L 342 299 L 332 304 L 344 306 L 339 307.5 L 345 308"
+        fill="none" stroke="#c1440e" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Every step, marked. This is the package. -->
+  <g fill="#ffffff" stroke="#c1440e" stroke-width="3">
+    <circle cx="250" cy="92" r="8.5"/>
+    <circle cx="300" cy="158" r="7"/>
+    <circle cx="268" cy="196" r="6.2"/>
+    <circle cx="322" cy="236" r="5.6"/>
+    <circle cx="296" cy="262" r="5"/>
+    <circle cx="336" cy="280" r="4.4"/>
+    <circle cx="318" cy="292" r="3.8"/>
+    <circle cx="342" cy="299" r="3.2"/>
+    <circle cx="332" cy="304" r="2.7"/>
+    <circle cx="344" cy="306" r="2.2"/>
+  </g>
+
+  <!-- The optimum: converged, and marked as reached -->
+  <circle cx="345" cy="308" r="5.5" fill="#c1440e" stroke="#ffffff" stroke-width="2"/>
+
+  <!-- Wordmark -->
+  <text x="60" y="372" font-family="Georgia, 'Times New Roman', serif" font-size="46" letter-spacing="1.5" fill="#1a1a1a">khumbu</text>
+  <text x="252" y="372" font-family="Georgia, 'Times New Roman', serif" font-size="16" fill="#6a7078">every step of the ascent, recorded</text>
+</svg>
