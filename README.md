@@ -44,9 +44,14 @@ No runtime dependencies. Python 3.11+.
 | [**Chapter 3 — Modern**](#chapter-3--modern) | momentum · Nesterov · Adam · SGD · simulated annealing · Robbins–Monro |
 | [**Chapter 4 — Frontier**](#chapter-4--frontier) | AdamW · Lion · SAM · Muon |
 | [**The benchmark**](#the-benchmark) | 10 methods × 5 problems × 30 seeds, one fixed budget |
+| [**📖 The methods, one card each**](docs/METHODS.md) | **equation · domain · convergence · cost · how it fails** — the mini-class |
 
 Read in order, it is one argument: **every method buys speed by assuming something, and the
 assumption is the thing to check.**
+
+If you want the reference rather than the story — every method's equation, the domain it works on,
+its convergence rate, what one step costs, and precisely **how it fails** — that is
+[**`docs/METHODS.md`**](docs/METHODS.md).
 
 ---
 
