@@ -1,6 +1,6 @@
 # numopt — classical numerical optimization
 
-[![CI](https://github.com/Kemquiros/optimizacion/actions/workflows/ci.yml/badge.svg)](https://github.com/Kemquiros/optimizacion/actions/workflows/ci.yml)
+[![CI](https://github.com/Kemquiros/numopt/actions/workflows/ci.yml/badge.svg)](https://github.com/Kemquiros/numopt/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -16,17 +16,23 @@ If you came here to **learn** it, start at [The one idea](#the-one-idea) — the
 document is written to be read in order, with the intuition before the mathematics and the
 failure modes stated out loud.
 
+![Convergence of four methods on the same objective](figures/convergence.png)
+
+*Distance to the true optimum, same objective, same interval. A straight line on this axis is
+linear convergence and its slope is the rate; Newton's two dots at the floor are what quadratic
+convergence looks like when the objective is already a parabola. Reproduce with
+`python scripts/make_figures.py`.*
+
 The algorithms were first written in 2017 for the undergraduate course *Optimización* at
-Universidad de Antioquia. They are preserved verbatim in [`legacy/`](legacy/); this package is a
-rewrite, and every difference is documented in [Provenance](#provenance) — including a bug that
-sat in the original for nine years.
+Universidad de Antioquia. This package is a rewrite; every difference is documented in
+[Provenance](#provenance) — including a bug that sat in the original for nine years.
 
 ---
 
 ## Install
 
 ```bash
-pip install git+https://github.com/Kemquiros/optimizacion
+pip install git+https://github.com/Kemquiros/numopt
 ```
 
 No runtime dependencies. Python 3.11 or newer.
@@ -110,6 +116,10 @@ then after discarding one end, **one of the surviving probes is already in the r
 the next round.** You pay for one new evaluation instead of two. That is the only reason the
 golden ratio appears here — it is the unique number with that self-similarity, and it is worth
 sitting with until it feels obvious.
+
+![Golden-section probes](figures/golden-section.png)
+
+*The first ten probes, converging on the optimum from both sides.*
 
 **What it costs.** The interval shrinks by a factor of 0.618 per step. To gain one decimal digit
 you need about five iterations. That is slow, and it is the honest price of assuming nothing.
@@ -203,6 +213,12 @@ result = gradient_descent(lambda x: (x-3)**2, lambda x: 2*(x-3), x0=0.0, learnin
 print(result.converged)     # False — and it says so
 ```
 
+![Four step-size regimes](figures/step-size.png)
+
+*The same objective and the same starting point, four step sizes. Below the limit the method
+converges linearly; at $\alpha = 0.4$ it reaches machine precision in about twenty-four steps;
+above $\alpha = 1$ the error **grows** — the dashed line — and no amount of patience recovers it.*
+
 For this objective $L = 2$, so any step above 1.0 diverges. The library performs no line search:
 choosing $\alpha$ is your job, and the result tells you the truth about how it went. A library
 that silently returned the last iterate here would be lying to you.
@@ -261,12 +277,13 @@ plot teaches convergence rates better than any table, including the one above.
 ## Development
 
 ```bash
-git clone https://github.com/Kemquiros/optimizacion && cd optimizacion
+git clone https://github.com/Kemquiros/numopt && cd optimizacion
 pip install -e ".[dev]"
 
-pytest          # 24 tests, all against analytically known optima
-ruff check .    # lint
-mypy            # strict type checking
+pytest                            # 24 tests, all against analytically known optima
+ruff check .                      # lint
+mypy                              # strict type checking
+python scripts/make_figures.py    # regenerate the figures above from the library itself
 ```
 
 CI runs all three on Python 3.11, 3.12 and 3.13.
@@ -280,9 +297,15 @@ in that spirit.
 
 ## Provenance
 
-The 2017 scripts are kept unmodified under [`legacy/`](legacy/) as a record of the original
-coursework. They are Python 2, interactive-only, and import the `compiler` module removed in
-Python 3.0. They are not importable and not covered by CI.
+The original coursework is preserved as an annotated git tag rather than a directory, so the
+repository reads as a tool while the evidence stays one command away:
+
+```bash
+git checkout coursework-2017
+```
+
+Those scripts are Python 2, interactive-only, and import the `compiler` module removed in
+Python 3.0. Every claim in the table below can be checked against them.
 
 | 2017 | Now | Why |
 |---|---|---|
@@ -310,7 +333,7 @@ Original coursework: John Edisson Tapias Zarrazola, Universidad de Antioquia, 20
 See [`CITATION.cff`](CITATION.cff), or:
 
 > Tapias Zarrazola, J. E. *numopt: classical one-dimensional numerical optimization methods.*
-> Version 1.0.0, 2026. https://github.com/Kemquiros/optimizacion
+> Version 1.0.0, 2026. https://github.com/Kemquiros/numopt
 
 ## License
 
