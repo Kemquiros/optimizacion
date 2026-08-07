@@ -1,0 +1,60 @@
+name: Release
+
+# Publishing is driven by a tag, and uses PyPI Trusted Publishing: GitHub proves
+# this repository's identity over OIDC, so there is no API token to store, leak
+# or rotate. The one-time setup lives on PyPI, not here.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify the tag matches the packaged version
+        run: |
+          python - <<'PY'
+          import os, pathlib, re, sys
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          text = pathlib.Path("pyproject.toml").read_text()
+          packaged = re.search(r'^version = "([^"]+)"', text, re.M).group(1)
+          if tag != packaged:
+              sys.exit(f"tag {tag} does not match pyproject version {packaged}")
+          print(f"tag and package agree on {tag}")
+          PY
+
+      - name: Run the full gate before publishing anything
+        run: |
+          pip install -e ".[dev]"
+          ruff check .
+          mypy
+          pytest
+
+      - name: Build
+        run: |
+          pip install build twine
+          python -m build
+          twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # the OIDC token that replaces an API key
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
