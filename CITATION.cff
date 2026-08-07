@@ -6,7 +6,7 @@ authors:
   - family-names: "Tapias Zarrazola"
     given-names: "John Edisson"
     orcid: "https://orcid.org/0009-0005-5166-0679"
-repository-code: "https://github.com/Kemquiros/optimizacion"
+repository-code: "https://github.com/Kemquiros/numopt"
 abstract: >-
   Tested implementations of golden-section search, bisection on the derivative,
   Newton-Raphson, deterministic and stochastic gradient descent, and the

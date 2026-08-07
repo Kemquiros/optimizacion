@@ -24,9 +24,10 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
+figures = ["matplotlib>=3.8"]
 
 [project.urls]
-Repository = "https://github.com/Kemquiros/optimizacion"
+Repository = "https://github.com/Kemquiros/numopt"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/numopt"]
@@ -35,7 +36,7 @@ packages = ["src/numopt"]
 line-length = 100
 src = ["src", "tests"]
 # The 2017 coursework is preserved verbatim; linting it would mean changing it.
-extend-exclude = ["legacy"]
+extend-exclude = ["legacy", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF", "D"]
