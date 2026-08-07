@@ -21,6 +21,9 @@ from numopt import Polynomial, bisection, golden_section, gradient_descent, newt
 FIGURES = Path(__file__).resolve().parent.parent / "figures"
 INK, ACCENT, MUTED = "#1a1a1a", "#c1440e", "#8a8a8a"
 PALETTE = ["#1a1a1a", "#c1440e", "#2166ac", "#4d9221"]
+# Distinct marker shapes so coincident curves stay tellable apart, and so the
+# figures survive black-and-white printing and colour-blind reading.
+MARKERS = ["o", "s", "D", "^"]
 
 plt.rcParams.update(
     {
@@ -69,12 +72,14 @@ def convergence_rates() -> None:
     }
 
     figure, axes = plt.subplots(figsize=(6.6, 3.9))
-    for (label, result), colour in zip(runs.items(), PALETTE, strict=True):
+    for offset, ((label, result), colour, marker) in enumerate(
+        zip(runs.items(), PALETTE, MARKERS, strict=True)
+    ):
         errors = [max(abs(step.x - 4.0), 1e-17) for step in result.history]
-        marker = "o" if "Newton" in label else None
         axes.semilogy(
-            range(1, len(errors) + 1), errors, label=label, color=colour,
-            linewidth=1.6, marker=marker, markersize=5, zorder=4 if marker else 2,
+            range(1, len(errors) + 1), errors, label=label, color=colour, linewidth=1.6,
+            marker=marker, markersize=5, markerfacecolor="white", markeredgewidth=1.2,
+            markevery=(offset * 2, 6),
         )
 
     axes.set_xlabel("iteration")
@@ -136,13 +141,17 @@ def step_size_regimes() -> None:
     ]
 
     figure, axes = plt.subplots(figsize=(6.6, 3.6))
-    for rate, label, colour in regimes:
+    for offset, (rate, label, colour) in enumerate(regimes):
         result = gradient_descent(
             objective, derivative, 0.0, learning_rate=rate, tolerance=0.0, max_iterations=40
         )
         errors = [max(abs(step.x - 3.0), 1e-17) for step in result.history]
         style = "--" if not result.converged and rate > 1.0 else "-"
-        axes.semilogy(range(1, len(errors) + 1), errors, style, color=colour, linewidth=1.6, label=f"a={rate}: {label}")
+        axes.semilogy(
+            range(1, len(errors) + 1), errors, style, color=colour, linewidth=1.6,
+            marker=MARKERS[offset], markersize=5, markerfacecolor="white",
+            markeredgewidth=1.2, markevery=(offset * 2, 6), label=f"a={rate}: {label}",
+        )
 
     axes.set_xlabel("iteration")
     axes.set_ylabel(r"$|x_k - x^\ast|$")
