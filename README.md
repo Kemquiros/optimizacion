@@ -2,362 +2,306 @@
   <img src="assets/logo.svg" alt="khumbu" width="560">
 </p>
 
-
-[![CI](https://github.com/Kemquiros/khumbu/actions/workflows/ci.yml/badge.svg)](https://github.com/Kemquiros/khumbu/actions/workflows/ci.yml)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-
-**A library you can use, and a lesson you can read.**
+<p align="center">
+  <a href="https://github.com/Kemquiros/khumbu/actions/workflows/ci.yml"><img src="https://github.com/Kemquiros/khumbu/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/tests-75-brightgreen" alt="75 tests">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT">
+</p>
 
 The Khumbu icefall is the stretch every Everest ascent must cross. It is dangerous and it is
 unavoidable, so the sherpas fix the route and mark it for everyone climbing behind them.
 
-This package does the same for optimisation. **Fifteen algorithms**, from the classical methods of
-numerical analysis to the optimisers that train neural networks, implemented so that each run can
-be *inspected rather than trusted*: every routine hands back the complete iterate history, and a
-run that exhausts its budget without meeting its tolerance says `converged=False` instead of
-quietly returning its last point.
-
-They are in one package because they are one subject — and reading them in order is the fastest
-way to see that.
-
-## The three chapters
-
-| Chapter | Methods | The question it answers |
-|---|---|---|
-| **1 · Classical** | `golden_section`, `brent`, `bisection`, `newton_raphson`, `secant`, `backtracking` | What can you promise, and what do you assume to promise it? |
-| **2 · Multivariate** | `nelder_mead`, `bfgs`, `conjugate_gradient` | What changes when the problem has more than one dimension? |
-| **3 · Modern** | `momentum`, `adam`, `simulated_annealing`, `robbins_monro`, `stochastic_gradient_descent` | Why do the optimisers that train neural networks look the way they do? |
-
-The third chapter is why this package exists. `robbins_monro` is the 1951 theorem whose two
-conditions — `Σaₖ = ∞` and `Σaₖ² < ∞` — are the reason learning-rate decay is not a heuristic, and
-the same conditions that make temporal-difference learning converge in reinforcement learning.
-`simulated_annealing` and `secant` sit a few lines away in the same library. Seeing the chain in
-one place is the point.
-
-If you came here to **use** it, jump to [Install](#install).
-If you came here to **learn** it, start at [The one idea](#the-one-idea) — the rest of this
-document is written to be read in order, with the intuition before the mathematics and the
-failure modes stated out loud.
-
-![Convergence of four methods on the same objective](figures/convergence.png)
-
-*Distance to the true optimum, same objective, same interval. A straight line on this axis is
-linear convergence and its slope is the rate; Newton's two dots at the floor are what quadratic
-convergence looks like when the objective is already a parabola. Reproduce with
-`python scripts/make_figures.py`.*
-
-The algorithms were first written in 2017 for the undergraduate course *Optimización* at
-Universidad de Antioquia. This package is a rewrite; every difference is documented in
-[Provenance](#provenance) — including a bug that sat in the original for nine years.
-
----
-
-## Install
+**This package does the same for an optimisation run.** Nineteen algorithms — from the classical
+methods of numerical analysis to the optimisers proposed in 2024 to replace Adam — each returning
+the *full trail* of its ascent rather than only the summit, and each saying plainly whether it
+converged or merely ran out of budget.
 
 ```bash
 pip install git+https://github.com/Kemquiros/khumbu
 ```
 
-No runtime dependencies. Python 3.11 or newer.
-
 ```python
-from khumbu import Polynomial, golden_section, newton_raphson
+from khumbu import bfgs, adam, simulated_annealing
 
-f = Polynomial([-12.0, 8.0, -1.0])  # -x² + 8x - 12, ascending order
-
-result = golden_section(f, a=0.0, b=10.0, maximize=True)
-print(result.x, result.converged)  # 4.0 True
-
-for step in result.history:  # the whole run, not just the answer
-    print(step.iteration, step.x, step.error)
+result = bfgs(f, gradient, x0)
+result.x            # the answer
+result.converged    # did it MEET its tolerance, or just stop?
+result.evaluations  # what it cost — the only fair axis for comparison
+result.history      # every step it took
 ```
+
+No runtime dependencies. Python 3.11+.
 
 ---
 
-## The one idea
+## Contents
 
-Every method in this library does the same thing: **it shrinks its uncertainty about where the
-optimum is.** They differ only in what they are willing to assume in exchange for shrinking it
-faster.
+| | |
+|---|---|
+| [**Chapter 1 — Classical**](#chapter-1--classical) | golden section · Brent · bisection · Newton–Raphson · secant · Armijo |
+| [**Chapter 2 — Multivariate**](#chapter-2--multivariate) | Nelder–Mead · BFGS · conjugate gradient |
+| [**Chapter 3 — Modern**](#chapter-3--modern) | momentum · Nesterov · Adam · SGD · simulated annealing · Robbins–Monro |
+| [**Chapter 4 — Frontier**](#chapter-4--frontier) | AdamW · Lion · SAM · Muon |
+| [**The benchmark**](#the-benchmark) | 10 methods × 5 problems × 30 seeds, one fixed budget |
 
-That trade is the entire subject. Assume nothing and you are safe but slow. Assume the function
-is smooth, and you can leap — until the assumption fails and you leap off a cliff.
+Read in order, it is one argument: **every method buys speed by assuming something, and the
+assumption is the thing to check.**
 
-| If you can assume… | You may use… | And you gain | And you risk |
+---
+
+## Chapter 1 — Classical
+
+*What can a method promise, and what does it assume in order to promise it?*
+
+| Function | Needs | Convergence | Guarantee |
 |---|---|---|---|
-| nothing but *one optimum in the interval* | golden section | steady, guaranteed shrinking | slow: ~0.618× per step |
-| you can compute the **first** derivative | bisection on `f′` | a known error bound *before you run it* | needs a sign change to start |
-| you can compute the **second** derivative | Newton–Raphson | doubling correct digits each step | divergence, far from the optimum |
-| the gradient is Lipschitz, and you can pick a step | gradient descent | scales to many dimensions | wrong step size ⇒ it blows up |
-| the above, plus you may be stuck in a shallow dip | stochastic gradient descent | escapes small basins | never settles exactly |
-| your problem is a positive-definite quadratic | conjugate gradient | exact answer in ≤ *n* steps | only for that shape of problem |
+| `golden_section(f, a, b)` | unimodality only | linear, ratio 0.618 | the bracket always shrinks |
+| `bisection(df, a, b)` | a sign change in `f′` | linear, ratio 1/2 | error `(b−a)/2ⁿ`, **known before you run** |
+| `brent(f, a, b)` | unimodality | superlinear when smooth | keeps golden section's floor |
+| `newton_raphson(df, d2f, x₀)` | `f″ ≠ 0` nearby | **quadratic** | none globally — may diverge |
+| `secant(df, x₀, x₁)` | `f′` only | superlinear, order **φ ≈ 1.618** | none globally |
+| `backtracking(f, df, x, d)` | a descent direction | — | sufficient decrease, guaranteed |
 
-**Read that table again after you finish the document.** It is the whole subject compressed, and
-it will mean something different the second time.
+![Chapter 1 convergence](figures/ch1-convergence.png)
 
----
+A straight line on this axis is linear convergence and its slope is the rate. Newton's two markers
+at the floor are quadratic convergence on an objective that is already a parabola: exact at the
+first iterate, with a second step spent only confirming it.
 
-## Choosing a method
+**The secant's order of convergence is the golden ratio** — the same φ that governs golden-section
+search, arrived at from a completely unrelated derivation. It needs no second derivative, so when
+`f″` is expensive it wins on total work while losing on iteration count.
 
-```
-Do you have f′(x)?
-│
-├─ No ──────────────────────────────────► golden_section
-│                                          (only needs to evaluate f)
-└─ Yes
-   │
-   ├─ Do you also have f″(x)?
-   │  │
-   │  ├─ Yes, and I have a decent starting guess ──► newton_raphson
-   │  │                                              (fastest; verify it converged)
-   │  └─ Yes, but my guess could be anywhere ──────► bisection
-   │                                                 (slower; cannot fail if bracketed)
-   │
-   └─ Only f′, and the problem is high-dimensional ─► gradient_descent
-                                                      (add noise if it stalls in a dip)
+**Brent is what production libraries actually run.** It takes a parabolic step *only when that step
+is provably sensible* — inside the bracket, and less than half the step before last — and falls
+back to golden section otherwise. The safeguard, not the interpolation, is the idea worth keeping.
 
-Is your problem literally  A x = b  with A symmetric positive-definite?
-└─ Yes ─────────────────────────────────────────────► conjugate_gradient
-```
+### The step size question
 
----
+`gradient_descent` leaves α to you, and choosing it wrongly is how the method fails:
 
-## The methods, one at a time
+![Four step-size regimes](figures/ch1-step-size.png)
 
-### 1. Golden-section search — *shrinking without derivatives*
+For `(x−3)²` the gradient is 2-Lipschitz, so convergence needs α < 1. Below it the method
+converges linearly; at 0.4 it reaches machine precision in twenty-four steps; above it the error
+**grows**, and no patience recovers it. The run reports `converged=False` rather than pretending.
 
-**The intuition.** You know the optimum is somewhere in `[a, b]` and that the function has only
-one of them there. Probe two interior points. Whichever probe is worse tells you which end of
-the interval cannot contain the optimum, so you throw that end away. Repeat.
+`backtracking` answers the question: start optimistic and halve until
 
-**The clever part.** Where should the two probes go? Naively you would place them fresh each
-round — two new function evaluations per step. But if you place them at
+$$f(x + t d) \le f(x) + c\,t\,f'(x)\,d$$
 
-$$x_1 = b - \rho\,(b-a), \qquad x_2 = a + \rho\,(b-a), \qquad \rho = \frac{\sqrt5 - 1}{2} \approx 0.618$$
-
-then after discarding one end, **one of the surviving probes is already in the right place for
-the next round.** You pay for one new evaluation instead of two. That is the only reason the
-golden ratio appears here — it is the unique number with that self-similarity, and it is worth
-sitting with until it feels obvious.
-
-![Golden-section probes](figures/golden-section.png)
-
-*The first ten probes, converging on the optimum from both sides.*
-
-**What it costs.** The interval shrinks by a factor of 0.618 per step. To gain one decimal digit
-you need about five iterations. That is slow, and it is the honest price of assuming nothing.
-
-**What can go wrong.** If the function has *two* minima in `[a, b]`, the method will confidently
-converge to one of them and never tell you the other existed. Unimodality is an assumption you
-must justify, not a checkbox.
-
-```python
-golden_section(lambda x: (x - 3) ** 2, a=-10, b=10)  # → 3.0
-```
+Any `t` satisfying this makes real progress. That single condition turns descent from a method
+that needs tuning into one that does not.
 
 ---
 
-### 2. Bisection on the derivative — *the method that promises before it runs*
+## Chapter 2 — Multivariate
 
-**The intuition.** At an optimum the slope is zero. So don't hunt for the optimum — hunt for a
-**sign change in the slope**. If `f′(a)` is negative and `f′(b)` is positive, a stationary point
-is trapped between them, and no amount of bad luck can let it escape. Cut the interval in half,
-keep the half that still straddles zero, repeat.
+*What changes when there is more than one dimension?*
 
-**The clever part.** You know the error bound *before you start*: after $n$ steps it is at most
+**`nelder_mead(f, x₀)`** keeps `n+1` points and reflects the worst through the centroid of the
+rest. Use it on a black box — a simulation, an experiment, legacy code nobody can differentiate.
+It has **no convergence guarantee above one dimension**; that is a known result, not a defect here,
+and it is stated in the docstring rather than hidden.
 
-$$\frac{b-a}{2^{\,n}}$$
+**`bfgs(f, ∇f, x₀)`** reaches Newton's speed while never forming a Hessian. It *accumulates* an
+inverse-Hessian approximation from gradients already paid for, using the secant condition — the
+curvature between two points is visible in how the gradient changed between them. That is
+Chapter 1's secant method generalised, and it is why BFGS rather than Newton is what most
+optimisers run.
 
-This is the only method here whose accuracy does not depend on what the function looks like.
-Need 10 digits over an interval of width 1? That is 34 iterations, guaranteed, always. You can
-write that number in a proposal before writing any code.
+![Chapter 2 — Rosenbrock](figures/ch2-multivariate.png)
 
-**What can go wrong.** You need the sign change to begin with. This implementation **raises**
-when the derivative does not change sign across the interval, rather than returning an endpoint
-and letting you believe it found something:
-
-```python
-bisection(lambda x: 2 * (x - 3), a=-5, b=0)
-# ValueError: the derivative does not change sign on the interval
-```
-
-That refusal is deliberate. A wrong answer that looks plausible costs more than an error.
+The same two runs, twice. On the left by iteration; on the right by objective evaluations, which
+is what they cost. Nelder–Mead spends several evaluations per iteration and BFGS spends a line
+search — comparing them by iteration count would be meaningless.
 
 ---
 
-### 3. Newton–Raphson — *fast, and honest about being dangerous*
+## Chapter 3 — Modern
 
-**The intuition.** Near your current point, pretend the function *is* a parabola — the one that
-matches its value, slope and curvature. You can jump to the bottom of a parabola exactly, in
-closed form. So jump there, and repeat from the new point.
+*Why do the optimisers that train neural networks look the way they do?*
 
-$$x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)}$$
+**`momentum`** accumulates velocity, so components that keep pointing the same way reinforce and
+oscillating ones cancel. It is the cure conjugate gradient applies to quadratics, obtained cheaply
+and without requiring one. With `nesterov=True` the gradient is measured at the look-ahead point,
+so the method brakes *before* overshooting instead of after.
 
-**The clever part.** Close to the optimum, the number of correct digits roughly **doubles each
-step**. Three iterations can take you from two digits to sixteen. Nothing else in this library
-comes close.
+![Chapter 3 — a narrow valley](figures/ch3-modern.png)
 
-**What can go wrong — and this is the lesson.** The method has *no* guarantee away from the
-optimum. If the curvature is small, the step is enormous and lands somewhere unrelated. If the
-curvature is zero, the step is undefined:
+**`adam`** keeps running averages of the gradient and its square, and divides one by the root of
+the other, giving every coordinate its own effective step size.
 
-```python
-newton_raphson(lambda x: x, lambda x: 0.0, x0=1.0)
-# ZeroDivisionError: vanishing second derivative at x=1
-```
+> **Why the bias correction exists** — the part most users cannot explain. Both averages start at
+> zero, so at step 1 the first moment holds only `(1 − β₁)` of the true gradient: about a tenth.
+> Dividing by `1 − β₁ᵏ` undoes exactly that shrinkage. Without it the earliest steps are far too
+> small and the run wastes its opening. A test pins this to within 5%.
 
-The 2017 version of this code responded to that case by drawing a *fresh random starting point*
-and trying again. It looked robust and it was not: the failure was real, and hiding it meant the
-run reported success on a method that had broken down. **Raising is the improvement.**
+**`simulated_annealing`** accepts a worse candidate with probability `exp(−Δ/T)` and cools
+geometrically, with the rate **derived** from the schedule rather than guessed:
 
-A quadratic objective, being already a parabola, is solved by the very first iterate — the test
-suite asserts exactly that.
+$$\alpha = \left(T_\text{final}/T_\text{initial}\right)^{1/(n-1)}$$
 
----
+the same construction used in SIROA (2018). It is the only method here that can leave a local
+minimum, and it pays for that with no convergence guarantee at all:
 
-### 4. Gradient descent — *the one that scales, and the one you must tune*
+![Chapter 3 — escaping](figures/ch3-escaping.png)
 
-**The intuition.** Stand on the surface, feel which way is downhill, take a step that way. Repeat.
+Adam falls into the nearest trap and stays there. Annealing crosses the whole lattice.
 
-$$x_{k+1} = x_k - \alpha\,f'(x_k)$$
+**`robbins_monro`** is the 1951 theorem underneath all of it. A root of a function observable only
+through noise can still be found, provided
 
-Nothing here is one-dimensional in spirit: this is the method that survives into a million
-dimensions, and it is why it underlies essentially all of modern machine learning.
+$$\sum a_k = \infty \quad\text{(able to travel any distance)} \qquad \sum a_k^2 < \infty \quad\text{(noise averages out)}$$
 
-**The whole difficulty is $\alpha$.** If the gradient is $L$-Lipschitz, convergence needs
-
-$$\alpha < \frac{2}{L}$$
-
-Too small and you crawl. Too large and the iterates **grow without bound** — the method does not
-merely slow down, it explodes. Try it:
-
-```python
-result = gradient_descent(lambda x: (x - 3) ** 2, lambda x: 2 * (x - 3), x0=0.0, learning_rate=1.5)
-print(result.converged)  # False — and it says so
-```
-
-![Four step-size regimes](figures/step-size.png)
-
-*The same objective and the same starting point, four step sizes. Below the limit the method
-converges linearly; at $\alpha = 0.4$ it reaches machine precision in about twenty-four steps;
-above $\alpha = 1$ the error **grows** — the dashed line — and no amount of patience recovers it.*
-
-For this objective $L = 2$, so any step above 1.0 diverges. The library performs no line search:
-choosing $\alpha$ is your job, and the result tells you the truth about how it went. A library
-that silently returned the last iterate here would be lying to you.
-
-**The stochastic variant.** Add Gaussian noise to the gradient and the iterate can rattle its way
-out of a shallow dip that would trap the deterministic method. The noise is annealed as
-$\sigma/\sqrt{k}$ — loud early, quiet later — which is what allows it to settle at all.
-
-It also takes a `seed`. **An unseeded stochastic result cannot be reproduced by whoever reads
-your paper**, which makes it evidence of nothing.
+`aₖ = c/kᵖ` satisfies both exactly when `0.5 < p ≤ 1`. **Those two conditions are the reason
+learning-rate decay is not a heuristic** — and they are the same conditions under which
+temporal-difference learning converges in reinforcement learning. Classical numerical analysis and
+RL turn out to be one subject, and here they are one import apart.
 
 ---
 
-### 5. Conjugate gradient — *when the shape of the problem is a gift*
+## Chapter 4 — Frontier
 
-**The intuition.** Solving $Ax = b$ for symmetric positive-definite $A$ is the *same thing* as
-minimizing the bowl
+*Everything published to replace Adam — and what it is actually worth.*
 
-$$\tfrac12\,x^\top A x - b^\top x$$
+**`adamw`** decouples weight decay from the gradient. The distinction is subtle and it matters:
+classical L2 adds `λx` to the gradient, and Adam then divides that term by `√v` along with
+everything else — so **the effective regularisation depends on each coordinate's gradient
+history**. A rarely-updated parameter gets decayed far more than a busy one, which nobody
+intended. AdamW applies the decay to the parameter directly.
 
-Steepest descent on a stretched bowl zig-zags: each step undoes part of the last one. Conjugate
-gradient chooses directions that are **$A$-orthogonal**, so progress made along one direction is
-never spoiled by the next.
+**`lion`** takes the **sign** of an interpolated momentum. Two consequences follow, and they are
+the whole method: half of Adam's optimiser memory (one buffer, not two), and every coordinate moves
+by exactly `lr` regardless of its gradient's size. That makes Lion insensitive to gradient scale
+and *very* sensitive to the learning rate — published recipes use roughly a tenth of Adam's.
 
-**The clever part.** With $n$ mutually conjugate directions in $n$ dimensions, you have covered
-the whole space. In exact arithmetic the method **terminates in at most $n$ steps** — not
-converges, *terminates*. It is a direct method wearing the clothes of an iterative one.
+**`sharpness_aware`** (SAM) minimises the worst value in a ball around the point rather than the
+value at the point, so it prefers flat minima to sharp ones. It costs **two gradients per step**,
+and the benchmark charges it accordingly.
 
-**What can go wrong.** All of it depends on $A$ being positive definite. This implementation
-checks the curvature along each search direction and raises if it is not, because the alternative
-is a silently meaningless answer.
+**`muon`** treats a parameter as a *matrix* and replaces its momentum by the nearest orthogonal
+matrix, so no singular direction dominates the update. The orthogonalisation uses a Newton–Schulz
+iteration rather than an SVD, which is what keeps it affordable.
+
+> **It does not converge to an orthogonal matrix, and that is deliberate.** The quintic
+> coefficients are tuned so singular values land in a band around one — roughly [0.7, 1.3] — as
+> fast as possible. Iterating further makes the result *oscillate* inside that band rather than
+> sharpen, which two tests document so nobody "fixes" it by adding steps.
+
+![Chapter 4 — the successors](figures/ch4-frontier.png)
+
+### What the literature actually found
+
+| Claim | Measured |
+|---|---|
+| Matrix methods beat AdamW | ~1.3× fewer steps below 520M parameters |
+| …and it scales | **decays to ~1.1× at 1.2B parameters** |
+| Muon is faster | **1.45× more wall-clock per step**; SOAP 1.72× |
+| Reported 2× speedups | *"many simply reflect a weak baseline"* |
+
+Source: [*Fantastic Pretraining Optimizers and Where to Find Them*](https://arxiv.org/abs/2509.02046) (2025).
+
+**A well-tuned AdamW is hard to beat**, and most papers claiming otherwise were not tuning it.
+That is precisely why this package ships a benchmark instead of a leaderboard.
 
 ---
 
-## Reading a result
+## The benchmark
 
-Every function returns the same object, and the point of it is that you can audit the run:
-
-```python
-result.x  # best point found
-result.fx  # objective there
-result.iterations  # how many steps were actually taken
-result.converged  # did it MEET its tolerance, or just run out of budget?
-result.history  # every iterate: (iteration, x, fx, error)
+```bash
+python -m khumbu.benchmark
 ```
 
-`converged` is the field to look at first. It is the difference between *"the method worked"* and
-*"the method stopped"*, and a great deal of published computational work confuses the two.
+**The protocol, stated before any result:**
 
-Plot `[step.error for step in result.history]` on a log scale: you will *see* the linear decay of
-golden section, the exact halving of bisection, and the sudden collapse of Newton. That single
-plot teaches convergence rates better than any table, including the one above.
+- **Fixed evaluation budget, not iteration count.** SAM pays two gradients per step and is charged.
+- **Thirty seeds**, each with a perturbed starting point. A single run is an anecdote.
+- **Median and interquartile range** — never the best run. Reporting the best seed is how methods
+  are made to look better than they are, and the table shows it beside the median so you can see
+  the gap.
+- **Calibration seeds disjoint from evaluation seeds**, so the reported number is not the one that
+  was tuned on. A test asserts the two sets do not intersect.
+- **Gradients verified against finite differences**, because a wrong gradient would silently
+  invalidate everything.
+
+![The benchmark](figures/benchmark.png)
+
+### Two results worth stating plainly
+
+**BFGS wins nearly everything, and by a distance.** On Beale it reaches `9×10⁻²⁰` in **42
+evaluations**, while Adam needs 959 to reach `9×10⁻¹⁹` and AdamW spends the full 2000 to reach
+`10⁻⁸`. A second-order method with a line search beats the fashionable first-order family by
+fifteen orders of magnitude at a fiftieth of the cost.
+
+**On Rastrigin, every gradient method fails identically.** Adam, AdamW, momentum, Nesterov, Lion
+and plain descent all land on `40.79` — the same nearby trap. Annealing reaches `0.059`. No amount
+of adaptivity substitutes for the ability to accept a worse step.
+
+### And the caveat that makes the benchmark honest
+
+**These are smooth, low-dimensional, deterministic problems — which is not what Adam, Lion, SAM or
+Muon were designed for.** They exist for noisy gradients over millions of parameters, where
+per-coordinate scaling and memory footprint decide everything and a Hessian approximation is
+unaffordable. Concluding "Lion loses to BFGS" from this table would be exactly the error the
+Chapter 4 literature review warns about.
+
+The benchmark that flatters your method is the one you must not run. This one is included so the
+package's own claims can be checked — including the ones it cannot support.
 
 ---
 
 ## Development
 
 ```bash
-git clone https://github.com/Kemquiros/khumbu && cd optimizacion
-pip install -e ".[dev]"
+git clone https://github.com/Kemquiros/khumbu && cd khumbu
+pip install -e ".[dev,figures]"
 
-pytest                            # 24 tests, all against analytically known optima
-ruff check .                      # lint
-mypy                              # strict type checking
-python scripts/make_figures.py    # regenerate the figures above from the library itself
+pytest                            # 75 tests
+ruff check . && mypy              # lint and strict typing
+python scripts/make_figures.py    # regenerate every figure above from the library
+python -m khumbu.benchmark        # regenerate the table
 ```
 
-CI runs all three on Python 3.11, 3.12 and 3.13.
-
-Tests assert *mathematical properties*, not just outputs: that bisection halves its bracket
-exactly, that golden section shrinks monotonically, that Newton is exact on a quadratic at the
-first iterate, that a seeded stochastic run is reproducible. If you extend the library, extend it
-in that spirit.
+Tests assert *properties*, not outputs: that bisection halves its bracket exactly, that Newton is
+exact on a quadratic at the first iterate, that Lion moves every coordinate the same distance
+regardless of gradient size, that a seeded stochastic run reproduces, that Newton–Schulz compresses
+singular values without converging. Extend the library in that spirit.
 
 ---
 
 ## Provenance
 
-The original coursework is preserved as an annotated git tag rather than a directory, so the
-repository reads as a tool while the evidence stays one command away:
+The 2017 coursework this grew from — the course *Optimización* at Universidad de Antioquia — is
+preserved as an annotated tag rather than a directory:
 
 ```bash
 git checkout coursework-2017
 ```
 
-Those scripts are Python 2, interactive-only, and import the `compiler` module removed in
-Python 3.0. Every claim in the table below can be checked against them.
-
-| 2017 | Now | Why |
-|---|---|---|
-| Python 2, `compiler.parse`, `raw_input` | Python 3.11+ | `compiler` was removed in Python 3.0; the scripts run on no supported interpreter |
-| `eval()` on a string typed by the user | callables passed as arguments | arbitrary code execution |
-| Algorithms interleaved with `matplotlib` and `input()` | pure functions, no I/O | nothing could be imported, reused or tested |
-| Stopping flag misspelled `termin` for `termina` | fixed, with a regression test | **the loop never terminated** — nine years unnoticed |
-| Newton drew a fresh random start when `f″ = 0` | raises `ZeroDivisionError` | retrying concealed a genuine breakdown |
-| Unseeded `random` in the stochastic method | explicit `seed` | an unseeded result is unreproducible |
-| No convergence signal | `converged: bool` | budget exhaustion was indistinguishable from success |
-
-Original coursework: John Edisson Tapias Zarrazola, Universidad de Antioquia, 2017.
-
-## Where to go next
-
-- Nocedal & Wright, *Numerical Optimization* — the standard reference; chapters 2–5 cover
-  everything above with proofs.
-- Boyd & Vandenberghe, *Convex Optimization* — free online; read it for *why* convexity is the
-  dividing line between methods that promise and methods that hope.
-- Shewchuk, *An Introduction to the Conjugate Gradient Method Without the Agonizing Pain* — the
-  clearest thing ever written about §5, and free.
+Those scripts are Python 2, interactive-only, import the `compiler` module removed in Python 3.0,
+apply `eval()` to user input, and contain a deterministic gradient-descent loop whose stopping flag
+was misspelled — so **it never terminated**. Every one of those is documented, and the loop bug is
+pinned by a regression test.
 
 ## Citation
 
-See [`CITATION.cff`](CITATION.cff), or:
+> Tapias Zarrazola, J. E. *khumbu: optimization from golden section to Adam, with the full trail
+> of every run.* Version 2.1.0, 2026. https://github.com/Kemquiros/khumbu
 
-> Tapias Zarrazola, J. E. *khumbu: classical one-dimensional numerical optimization methods.*
-> Version 1.0.0, 2026. https://github.com/Kemquiros/khumbu
+See [`CITATION.cff`](CITATION.cff).
+
+## Further reading
+
+- Nocedal & Wright, *Numerical Optimization* — chapters 2–6 cover Chapters 1 and 2 with proofs.
+- Boyd & Vandenberghe, *Convex Optimization* — free online; why convexity divides methods that
+  promise from methods that hope.
+- Shewchuk, *An Introduction to the Conjugate Gradient Method Without the Agonizing Pain* — free,
+  and the clearest thing ever written on the subject.
+- Robbins & Monro (1951), *A Stochastic Approximation Method* — the theorem under Chapter 3.
+- [*Fantastic Pretraining Optimizers and Where to Find Them*](https://arxiv.org/abs/2509.02046) —
+  the honest accounting of Chapter 4.
 
 ## License
 

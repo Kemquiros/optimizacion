@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "khumbu"
-version = "2.0.0"
+version = "2.1.0"
 description = "Classical one-dimensional numerical optimization methods, with tested implementations and full iterate histories"
 readme = "README.md"
 license = { file = "LICENSE" }

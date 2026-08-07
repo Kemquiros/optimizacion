@@ -53,4 +53,4 @@ __all__ = [
     "simulated_annealing",
     "stochastic_gradient_descent",
 ]
-__version__ = "2.0.0"
+__version__ = "2.1.0"
