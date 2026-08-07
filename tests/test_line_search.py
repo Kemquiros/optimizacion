@@ -5,7 +5,7 @@ import math
 
 import pytest
 
-from numopt import Polynomial, bisection, golden_section
+from khumbu import Polynomial, bisection, golden_section
 
 
 def test_golden_section_finds_known_minimum() -> None:

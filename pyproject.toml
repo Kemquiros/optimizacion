@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "numopt"
-version = "1.0.0"
+name = "khumbu"
+version = "2.0.0"
 description = "Classical one-dimensional numerical optimization methods, with tested implementations and full iterate histories"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -27,10 +27,10 @@ dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11"]
 figures = ["matplotlib>=3.8"]
 
 [project.urls]
-Repository = "https://github.com/Kemquiros/numopt"
+Repository = "https://github.com/Kemquiros/khumbu"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/numopt"]
+packages = ["src/khumbu"]
 
 [tool.ruff]
 line-length = 100
@@ -40,7 +40,16 @@ extend-exclude = ["legacy", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF", "D"]
-ignore = ["D203", "D213"]
+ignore = [
+  "D203",
+  "D213",
+  # The loop variable of every optimiser is read after the loop, as the
+  # iteration count returned in the result. Ruff cannot see across the boundary.
+  "B007",
+  # Docstrings carry real mathematics: the minus sign U+2212 and Greek letters
+  # are correct notation, not typos of ASCII lookalikes.
+  "RUF002",
+]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D100", "D103"]

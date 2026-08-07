@@ -1,15 +1,39 @@
-# numopt — classical numerical optimization
+<p align="center">
+  <img src="assets/logo.svg" alt="khumbu" width="560">
+</p>
 
-[![CI](https://github.com/Kemquiros/numopt/actions/workflows/ci.yml/badge.svg)](https://github.com/Kemquiros/numopt/actions/workflows/ci.yml)
+
+[![CI](https://github.com/Kemquiros/khumbu/actions/workflows/ci.yml/badge.svg)](https://github.com/Kemquiros/khumbu/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 **A library you can use, and a lesson you can read.**
 
-Six classical optimization methods, implemented so that each run can be *inspected rather than
-trusted*: every routine hands back the complete iterate history, and a run that exhausts its
-budget without meeting its tolerance says `converged=False` instead of quietly returning its
-last point.
+The Khumbu icefall is the stretch every Everest ascent must cross. It is dangerous and it is
+unavoidable, so the sherpas fix the route and mark it for everyone climbing behind them.
+
+This package does the same for optimisation. **Fifteen algorithms**, from the classical methods of
+numerical analysis to the optimisers that train neural networks, implemented so that each run can
+be *inspected rather than trusted*: every routine hands back the complete iterate history, and a
+run that exhausts its budget without meeting its tolerance says `converged=False` instead of
+quietly returning its last point.
+
+They are in one package because they are one subject — and reading them in order is the fastest
+way to see that.
+
+## The three chapters
+
+| Chapter | Methods | The question it answers |
+|---|---|---|
+| **1 · Classical** | `golden_section`, `brent`, `bisection`, `newton_raphson`, `secant`, `backtracking` | What can you promise, and what do you assume to promise it? |
+| **2 · Multivariate** | `nelder_mead`, `bfgs`, `conjugate_gradient` | What changes when the problem has more than one dimension? |
+| **3 · Modern** | `momentum`, `adam`, `simulated_annealing`, `robbins_monro`, `stochastic_gradient_descent` | Why do the optimisers that train neural networks look the way they do? |
+
+The third chapter is why this package exists. `robbins_monro` is the 1951 theorem whose two
+conditions — `Σaₖ = ∞` and `Σaₖ² < ∞` — are the reason learning-rate decay is not a heuristic, and
+the same conditions that make temporal-difference learning converge in reinforcement learning.
+`simulated_annealing` and `secant` sit a few lines away in the same library. Seeing the chain in
+one place is the point.
 
 If you came here to **use** it, jump to [Install](#install).
 If you came here to **learn** it, start at [The one idea](#the-one-idea) — the rest of this
@@ -32,20 +56,20 @@ Universidad de Antioquia. This package is a rewrite; every difference is documen
 ## Install
 
 ```bash
-pip install git+https://github.com/Kemquiros/numopt
+pip install git+https://github.com/Kemquiros/khumbu
 ```
 
 No runtime dependencies. Python 3.11 or newer.
 
 ```python
-from numopt import Polynomial, golden_section, newton_raphson
+from khumbu import Polynomial, golden_section, newton_raphson
 
-f = Polynomial([-12.0, 8.0, -1.0])            # -x² + 8x - 12, ascending order
+f = Polynomial([-12.0, 8.0, -1.0])  # -x² + 8x - 12, ascending order
 
 result = golden_section(f, a=0.0, b=10.0, maximize=True)
-print(result.x, result.converged)              # 4.0 True
+print(result.x, result.converged)  # 4.0 True
 
-for step in result.history:                    # the whole run, not just the answer
+for step in result.history:  # the whole run, not just the answer
     print(step.iteration, step.x, step.error)
 ```
 
@@ -129,7 +153,7 @@ converge to one of them and never tell you the other existed. Unimodality is an 
 must justify, not a checkbox.
 
 ```python
-golden_section(lambda x: (x - 3) ** 2, a=-10, b=10)     # → 3.0
+golden_section(lambda x: (x - 3) ** 2, a=-10, b=10)  # → 3.0
 ```
 
 ---
@@ -209,8 +233,8 @@ Too small and you crawl. Too large and the iterates **grow without bound** — t
 merely slow down, it explodes. Try it:
 
 ```python
-result = gradient_descent(lambda x: (x-3)**2, lambda x: 2*(x-3), x0=0.0, learning_rate=1.5)
-print(result.converged)     # False — and it says so
+result = gradient_descent(lambda x: (x - 3) ** 2, lambda x: 2 * (x - 3), x0=0.0, learning_rate=1.5)
+print(result.converged)  # False — and it says so
 ```
 
 ![Four step-size regimes](figures/step-size.png)
@@ -258,11 +282,11 @@ is a silently meaningless answer.
 Every function returns the same object, and the point of it is that you can audit the run:
 
 ```python
-result.x            # best point found
-result.fx           # objective there
-result.iterations   # how many steps were actually taken
-result.converged    # did it MEET its tolerance, or just run out of budget?
-result.history      # every iterate: (iteration, x, fx, error)
+result.x  # best point found
+result.fx  # objective there
+result.iterations  # how many steps were actually taken
+result.converged  # did it MEET its tolerance, or just run out of budget?
+result.history  # every iterate: (iteration, x, fx, error)
 ```
 
 `converged` is the field to look at first. It is the difference between *"the method worked"* and
@@ -277,7 +301,7 @@ plot teaches convergence rates better than any table, including the one above.
 ## Development
 
 ```bash
-git clone https://github.com/Kemquiros/numopt && cd optimizacion
+git clone https://github.com/Kemquiros/khumbu && cd optimizacion
 pip install -e ".[dev]"
 
 pytest                            # 24 tests, all against analytically known optima
@@ -332,8 +356,8 @@ Original coursework: John Edisson Tapias Zarrazola, Universidad de Antioquia, 20
 
 See [`CITATION.cff`](CITATION.cff), or:
 
-> Tapias Zarrazola, J. E. *numopt: classical one-dimensional numerical optimization methods.*
-> Version 1.0.0, 2026. https://github.com/Kemquiros/numopt
+> Tapias Zarrazola, J. E. *khumbu: classical one-dimensional numerical optimization methods.*
+> Version 1.0.0, 2026. https://github.com/Kemquiros/khumbu
 
 ## License
 

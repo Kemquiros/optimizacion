@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 from collections.abc import Callable, Sequence
 
-from numopt.result import Result, Step
+from khumbu.result import Result, Step
 
 
 def gradient_descent(

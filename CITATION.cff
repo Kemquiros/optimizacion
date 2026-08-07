@@ -1,12 +1,12 @@
 cff-version: 1.2.0
-title: "numopt: classical one-dimensional numerical optimization methods"
+title: "khumbu: optimization from golden section to Adam, with the full trail of every run"
 message: "If you use this software, please cite it as below."
 type: software
 authors:
   - family-names: "Tapias Zarrazola"
     given-names: "John Edisson"
     orcid: "https://orcid.org/0009-0005-5166-0679"
-repository-code: "https://github.com/Kemquiros/numopt"
+repository-code: "https://github.com/Kemquiros/khumbu"
 abstract: >-
   Tested implementations of golden-section search, bisection on the derivative,
   Newton-Raphson, deterministic and stochastic gradient descent, and the
@@ -20,4 +20,4 @@ keywords:
   - golden section search
   - conjugate gradient
 license: MIT
-version: 1.0.0
+version: 2.0.0

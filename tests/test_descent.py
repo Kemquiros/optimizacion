@@ -2,7 +2,7 @@
 
 import pytest
 
-from numopt import (
+from khumbu import (
     Polynomial,
     conjugate_gradient,
     gradient_descent,

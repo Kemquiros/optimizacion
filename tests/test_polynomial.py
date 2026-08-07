@@ -2,7 +2,7 @@
 
 import pytest
 
-from numopt import Polynomial
+from khumbu import Polynomial
 
 
 def test_horner_evaluation_matches_direct_powers() -> None:
